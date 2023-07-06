@@ -50,7 +50,7 @@
     <div th:if="${#fields.hasErrors('deadlineFrom')}" th:errors="*{deadlineFrom}" th:errorclass="red"></div>
     <div th:if="${#fields.hasErrors('deadlineTo')}" th:errors="*{deadlineTo}" th:errorclass="red"></div>
     <hr>
-    <button type="submit" th:formaction="@{/todo/create/form}">新規追加</button>
+	<button type="submit" th:formaction="@{/todo/create/form}">新規追加</button>
   </form>
   <table border="1">
     <tr>
@@ -63,7 +63,9 @@
     </tr>
     <tr th:each="todo:${todoList}">
       <td th:text="${todo.id}"></td>
-      <td><a th:href="@{/todo/__${todo.id}__}" th:text="${todo.title}"></a></td>
+      <td>
+		  <a th:href="@{/todo/__${todo.id}__}" th:text="${todo.title}"></a>
+	  </td>
       <!--
 		  __${}__で値を埋め込む
 	   --> 

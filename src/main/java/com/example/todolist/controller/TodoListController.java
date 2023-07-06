@@ -55,6 +55,14 @@ public class TodoListController {
 	public ModelAndView showTodoList(ModelAndView mv,
 			@PageableDefault(page = 0, size = 2, sort = "id") Pageable pageable) {
 
+		// sessionから前回のpageableを取得
+		Pageable prevPageable = (Pageable) session.getAttribute("prevPageable");
+		if (prevPageable == null) {
+			// なければ@PageableDefaultを使う
+			prevPageable = pageable;
+			session.setAttribute("prevPageable", prevPageable);
+		}
+
 		// 一覧を検索して表示する
 		mv.setViewName("todoList");
 		Page<Todo> todoPage = todoRepository.findAll(pageable);
@@ -82,6 +90,10 @@ public class TodoListController {
 	public ModelAndView queryTodo(@ModelAttribute TodoQuery todoQuery, BindingResult result,
 			@PageableDefault(page = 0, size = 2) Pageable pageable, // ①
 			ModelAndView mv) {
+
+		// 現在のページ位置を保存
+		session.setAttribute("prevPageable", pageable);
+
 		mv.setViewName("todoList");
 		Page<Todo> todoPage = null; // ②
 		if (todoService.isValid(todoQuery, result)) {
@@ -118,7 +130,7 @@ public class TodoListController {
 			// エラーなし
 			Todo todo = todoData.toEntity();
 			todoRepository.saveAndFlush(todo);
-			return "redirect:/todo";
+			return redirectPageById();
 		} else {
 			// エラーあり
 			return "todoForm";
@@ -127,7 +139,7 @@ public class TodoListController {
 
 	@PostMapping("/todo/cancel")
 	public String cancel() {
-		return "redirect:/todo";
+		return redirectPageById();
 	}
 
 	@GetMapping("/todo/{id}")
@@ -143,12 +155,13 @@ public class TodoListController {
 	@PostMapping("/todo/update")
 	public String updateTodo(@ModelAttribute @Validated TodoData todoData, BindingResult result, Model model) {
 		// エラーチェック
-		boolean isValid = todoService.isValid(todoData, result);
+		boolean isUpdate = true;
+		boolean isValid = todoService.isValid(todoData, result, isUpdate);
 		if (!result.hasErrors() && isValid) {
 			// エラーなし
 			Todo todo = todoData.toEntity();
 			todoRepository.saveAndFlush(todo);
-			return "redirect:/todo";
+			return redirectPageById();
 		} else {
 			// エラーあり
 			return "todoForm";
@@ -158,6 +171,16 @@ public class TodoListController {
 	@PostMapping("/todo/delete")
 	public String deleteTodo(@ModelAttribute TodoData todoData) {
 		todoRepository.deleteById(todoData.getId());
+		return redirectPageById();
+	}
+
+	private String redirectPageById() {
+		Integer pageId = (Integer) session.getAttribute("pageId");
+
+		if (session.getAttribute("pageId") != null) {
+			session.setAttribute("pageId", null);
+			return "redirect:/todo/query?page=" + (pageId - 1);
+		}
 		return "redirect:/todo";
 	}
 }
